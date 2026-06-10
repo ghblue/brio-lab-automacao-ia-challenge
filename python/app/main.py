@@ -6,8 +6,14 @@ import argparse
 import json
 from pathlib import Path
 
+from app.clickup_client import create_clickup_task
 from app.config import BASE_DIR, DATABASE_PATH
-from app.database import get_lead_by_id, init_db, insert_diagnostic_lead
+from app.database import (
+    get_lead_by_id,
+    init_db,
+    insert_diagnostic_lead,
+    update_lead_clickup_result,
+)
 from app.normalizers import normalize_payload
 from app.validators import validate_payload
 
@@ -93,8 +99,50 @@ def main() -> int:
         return 1
 
     print_json("\nRegistro salvo no SQLite:", saved_lead)
-    print(f"\nSucesso: etapa de banco concluida em {DATABASE_PATH}.")
-    print("ClickUp ainda nao foi acionado nesta etapa.")
+
+    clickup_failed = False
+
+    try:
+        clickup_task_id = create_clickup_task(saved_lead)
+        update_lead_clickup_result(
+            lead_id,
+            status="clickup_created",
+            clickup_task_id=clickup_task_id,
+            error_message=None,
+        )
+    except RuntimeError as error:
+        clickup_failed = True
+        error_message = str(error)
+        print(f"\nFalha na etapa ClickUp: {error_message}")
+
+        try:
+            update_lead_clickup_result(
+                lead_id,
+                status="clickup_failed",
+                clickup_task_id=None,
+                error_message=error_message,
+            )
+        except RuntimeError as database_error:
+            print(f"Falha adicional ao registrar erro no banco: {database_error}")
+            return 1
+
+    try:
+        final_lead = get_lead_by_id(lead_id)
+    except RuntimeError as error:
+        print(f"\nFalha de banco de dados: {error}")
+        return 1
+
+    if final_lead is None:
+        print(f"\nFalha: lead {lead_id} nao encontrado apos a etapa ClickUp.")
+        return 1
+
+    print_json("\nRegistro final no SQLite:", final_lead)
+
+    if clickup_failed:
+        print(f"\nFluxo concluido com falha registrada no ClickUp em {DATABASE_PATH}.")
+        return 1
+
+    print(f"\nSucesso: fluxo concluido em {DATABASE_PATH}.")
     return 0
 
 

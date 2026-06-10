@@ -2,9 +2,9 @@
 
 Este diretorio contem o entregavel Python do desafio tecnico da Brio Lab.
 
-O objetivo final do Desafio 2 sera simular o recebimento de um JSON de diagnostico, validar e normalizar os dados, salvar as informacoes tratadas em banco SQLite e criar ou simular a criacao de uma tarefa no ClickUp para o time comercial.
+O objetivo do Desafio 2 e simular o recebimento de um JSON de diagnostico, validar e normalizar os dados, salvar as informacoes tratadas em banco SQLite e simular a criacao de uma tarefa no ClickUp para o time comercial.
 
-Nesta etapa, o script carrega um payload JSON local, valida os campos obrigatorios, normaliza os dados aceitos, persiste o lead em SQLite e imprime o registro salvo. Ainda nao ha chamada ao ClickUp.
+Nesta etapa, o script carrega um payload JSON local, valida os campos obrigatorios, normaliza os dados aceitos, persiste o lead em SQLite, monta um payload realista para o ClickUp, imprime a simulacao da tarefa e atualiza o registro com o ID simulado.
 
 ## Estrutura
 
@@ -51,6 +51,19 @@ O banco SQLite e criado automaticamente em:
 python/data/leads.db
 ```
 
+O arquivo `leads.db` e um artefato local de execucao e nao deve ser versionado.
+
+## Variaveis de ambiente
+
+O projeto nao carrega `.env` automaticamente para evitar dependencias externas nesta etapa. Caso queira alterar algum valor, exporte as variaveis no terminal antes de rodar o script ou use um gerenciador de ambiente da sua preferencia.
+
+As variaveis documentadas em `.env.example` sao:
+
+- `CLICKUP_SIMULATION_MODE`: controla o modo simulado. O padrao do codigo e `true` quando a variavel nao existe.
+- `CLICKUP_API_TOKEN`: token que seria usado em uma chamada real futura para a API do ClickUp. Nao e usado no modo simulado.
+- `CLICKUP_LIST_ID`: lista de destino que seria usada na API real. No modo simulado, aparece como informacao de destino quando configurada.
+- `CLICKUP_ASSIGNEE_ID`: usuario responsavel pela tarefa. Quando informado, entra no payload em `assignees`.
+
 ## Validacoes implementadas
 
 O script valida:
@@ -74,9 +87,21 @@ O script normaliza:
 
 Se o telefone ja vier com DDI `55`, o codigo do pais nao e duplicado.
 
-## Exemplo de uso
+## Fluxo atual
 
-Com o payload valido em `examples/valid_payload.json`, o script imprime o payload recebido e o payload normalizado:
+O fluxo completo executado hoje e:
+
+```txt
+JSON -> validacao -> normalizacao -> SQLite -> payload ClickUp simulado -> atualizacao do banco
+```
+
+Com payload valido, o lead e salvo com status inicial `saved`, a tarefa ClickUp e simulada, e o registro e atualizado para `clickup_created` com o ID retornado pela simulacao.
+
+Com payload invalido, o script lista todos os erros encontrados, nao salva no banco e nao executa a simulacao do ClickUp.
+
+## Exemplo de uso valido
+
+Com o payload valido em `examples/valid_payload.json`, o script imprime o payload recebido, o payload normalizado, o registro salvo, o payload ClickUp simulado e o registro final:
 
 ```txt
 Payload normalizado:
@@ -102,7 +127,34 @@ Registro salvo no SQLite:
   "created_at": "2026-06-10T12:00:00+00:00"
 }
 
-Sucesso: etapa de banco concluida em .../python/data/leads.db.
+Payload ClickUp simulado:
+Lista ClickUp destino: nao configurada no ambiente
+{
+  "name": "Novo lead: Ana Carvalho",
+  "description": "Nome: Ana Carvalho\nTelefone: +5511999998888\nE-mail: ana.carvalho@example.com\nEspecialidade: Dermatologia\nPrincipal desafio: Atrair pacientes qualificados para a agenda particular",
+  "tags": [
+    "diagnostico",
+    "lead-site",
+    "automacao"
+  ],
+  "status": "novo lead"
+}
+
+Registro final no SQLite:
+{
+  "id": 1,
+  "nome": "Ana Carvalho",
+  "telefone": "+5511999998888",
+  "email": "ana.carvalho@example.com",
+  "especialidade": "Dermatologia",
+  "principal_desafio": "Atrair pacientes qualificados para a agenda particular",
+  "status": "clickup_created",
+  "clickup_task_id": "simulated-clickup-task-1",
+  "error_message": null,
+  "created_at": "2026-06-10T12:00:00+00:00"
+}
+
+Sucesso: fluxo concluido em .../python/data/leads.db.
 ```
 
 Com o payload invalido, o script imprime todas as mensagens de erro e nao normaliza, salva ou envia os dados.
@@ -118,13 +170,16 @@ As operacoes de banco ficam concentradas em `app/database.py`:
 - abertura da conexao SQLite;
 - criacao da tabela com `init_db()`;
 - insercao com `insert_diagnostic_lead()`;
-- busca do registro criado com `get_lead_by_id()`.
+- busca do registro criado com `get_lead_by_id()`;
+- atualizacao do resultado da etapa ClickUp com `update_lead_clickup_result()`.
 
 ## ClickUp
 
-A integracao com ClickUp ainda nao foi implementada nesta etapa. Na proxima etapa, o projeto deve criar ou simular a criacao de uma tarefa usando os dados persistidos em SQLite.
+A criacao de tarefa no ClickUp esta em modo simulado por padrao. Essa decisao evita depender de uma conta real, token valido ou lista configurada no ClickUp, facilita a reproducao local pelo avaliador e ainda demonstra o payload e a logica de integracao que seriam usados em uma chamada real.
+
+O modulo `app/clickup_client.py` separa a montagem do payload (`build_clickup_task_payload()`) da criacao da tarefa (`create_clickup_task()`). Hoje, `create_clickup_task()` imprime o payload e retorna um ID no formato `simulated-clickup-task-{lead_id}`. Uma melhoria futura seria implementar o ramo real usando a API do ClickUp, com `CLICKUP_API_TOKEN` e `CLICKUP_LIST_ID`, sem mudar o restante do fluxo.
 
 ## Proximas etapas
 
-- Implementar o modo simulado de criacao de tarefa no ClickUp.
-- Documentar o payload enviado ao ClickUp e possiveis melhorias futuras.
+- Substituir o modo simulado por uma chamada real opcional para a API do ClickUp.
+- Adicionar testes automatizados para validacao, normalizacao, persistencia e montagem do payload.

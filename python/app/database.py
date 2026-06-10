@@ -54,6 +54,15 @@ FROM diagnostic_leads
 WHERE id = ?
 """
 
+UPDATE_LEAD_CLICKUP_RESULT_SQL = """
+UPDATE diagnostic_leads
+SET
+    status = ?,
+    clickup_task_id = ?,
+    error_message = ?
+WHERE id = ?
+"""
+
 
 def open_connection(database_path: Path = DATABASE_PATH) -> sqlite3.Connection:
     """Abre uma conexao SQLite e garante que a pasta de dados exista."""
@@ -115,3 +124,27 @@ def get_lead_by_id(lead_id: int) -> dict[str, Any] | None:
         return None
 
     return dict(row)
+
+
+def update_lead_clickup_result(
+    lead_id: int,
+    *,
+    status: str,
+    clickup_task_id: str | None,
+    error_message: str | None,
+) -> None:
+    """Atualiza o resultado da etapa de criacao da tarefa no ClickUp."""
+    try:
+        with closing(open_connection()) as connection:
+            cursor = connection.execute(
+                UPDATE_LEAD_CLICKUP_RESULT_SQL,
+                (status, clickup_task_id, error_message, lead_id),
+            )
+            connection.commit()
+    except sqlite3.Error as error:
+        raise RuntimeError(
+            f"nao foi possivel atualizar o lead {lead_id} no banco SQLite: {error}"
+        ) from error
+
+    if cursor.rowcount == 0:
+        raise RuntimeError(f"lead {lead_id} nao encontrado para atualizacao")
