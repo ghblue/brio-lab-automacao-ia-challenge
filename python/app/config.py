@@ -1,4 +1,10 @@
-"""Configuracoes futuras da aplicacao."""
+"""Configuracoes simples da aplicacao."""
 
-# Este modulo concentrara variaveis de ambiente e flags de execucao.
-# Nesta etapa, nenhuma configuracao e obrigatoria para rodar o projeto.
+from __future__ import annotations
+
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = BASE_DIR / "data"
+DATABASE_PATH = DATA_DIR / "leads.db"

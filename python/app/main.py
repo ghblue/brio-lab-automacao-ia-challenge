@@ -6,17 +6,18 @@ import argparse
 import json
 from pathlib import Path
 
+from app.config import BASE_DIR, DATABASE_PATH
+from app.database import get_lead_by_id, init_db, insert_diagnostic_lead
 from app.normalizers import normalize_payload
 from app.validators import validate_payload
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_PAYLOAD_PATH = BASE_DIR / "examples" / "valid_payload.json"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Valida e normaliza um payload de diagnostico."
+        description="Valida, normaliza e salva um payload de diagnostico."
     )
     parser.add_argument(
         "--payload",
@@ -78,8 +79,22 @@ def main() -> int:
     normalized_payload = normalize_payload(payload)
 
     print_json("\nPayload normalizado:", normalized_payload.to_dict())
-    print("\nSucesso: payload validado e normalizado.")
-    print("Banco de dados e ClickUp ainda nao foram acionados nesta etapa.")
+
+    try:
+        init_db()
+        lead_id = insert_diagnostic_lead(normalized_payload)
+        saved_lead = get_lead_by_id(lead_id)
+    except RuntimeError as error:
+        print(f"\nFalha de banco de dados: {error}")
+        return 1
+
+    if saved_lead is None:
+        print(f"\nFalha: lead {lead_id} nao encontrado apos a insercao.")
+        return 1
+
+    print_json("\nRegistro salvo no SQLite:", saved_lead)
+    print(f"\nSucesso: etapa de banco concluida em {DATABASE_PATH}.")
+    print("ClickUp ainda nao foi acionado nesta etapa.")
     return 0
 
 
