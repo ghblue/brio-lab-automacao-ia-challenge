@@ -1,7 +1,7 @@
 {
-  "nome": "",
-  "telefone": "(11) 98765-4321",
+  "nome": "   ",
+  "telefone": "12345",
   "email": "email-invalido",
-  "especialidade": "Dermatologia",
-  "principal_desafio": ""
+  "especialidade": "",
+  "principal_desafio": "   "
 }

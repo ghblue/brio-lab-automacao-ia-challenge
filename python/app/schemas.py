@@ -1,4 +1,19 @@
-"""Definicoes futuras de schema do diagnostico."""
+"""Schemas simples para os dados do diagnostico."""
 
-# Este modulo centralizara os campos esperados do formulario de diagnostico.
-# Por enquanto, a estrutura permanece documentada pelos payloads de exemplo.
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+
+
+@dataclass(frozen=True)
+class Diagnostico:
+    """Representa um diagnostico ja validado e normalizado."""
+
+    nome: str
+    telefone: str
+    email: str
+    especialidade: str
+    principal_desafio: str
+
+    def to_dict(self) -> dict[str, str]:
+        return asdict(self)
