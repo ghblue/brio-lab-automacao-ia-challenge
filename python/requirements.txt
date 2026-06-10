@@ -1,0 +1,1 @@
+# Nenhuma dependencia externa e necessaria nesta etapa inicial.
