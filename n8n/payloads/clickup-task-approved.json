@@ -1,0 +1,47 @@
+{
+  "event": "taskStatusUpdated",
+  "source": "clickup_simulado",
+  "task": {
+    "id": "BRIO-POST-001",
+    "name": "Post Instagram - Autoridade em odontologia estetica",
+    "description": "Publicacao educativa para reforcar autoridade da especialista e gerar conversas com potenciais pacientes interessados em clareamento e lentes de contato dental.",
+    "status": {
+      "status": "aprovado",
+      "color": "#2ecd6f",
+      "type": "closed"
+    },
+    "url": "https://app.clickup.com/t/BRIO-POST-001",
+    "creator": {
+      "id": 101,
+      "username": "Mariana Silva",
+      "email": "mariana.silva@example.com"
+    },
+    "assignees": [
+      {
+        "id": 202,
+        "username": "Lucas Andrade",
+        "email": "lucas.andrade@example.com"
+      }
+    ],
+    "custom_fields": [
+      {
+        "id": "cf_legenda",
+        "name": "legenda",
+        "type": "text",
+        "value": "Clareamento dental nao e sobre ter um sorriso artificial. E sobre recuperar a confianca para sorrir em fotos, reunioes e momentos importantes. Antes de escolher qualquer procedimento estetico, uma avaliacao individual ajuda a entender a saude dos dentes, o tom ideal e o resultado possivel para cada pessoa."
+      },
+      {
+        "id": "cf_data_postagem",
+        "name": "data_postagem",
+        "type": "date",
+        "value": "2026-06-18"
+      },
+      {
+        "id": "cf_tipo_conteudo",
+        "name": "tipo_conteudo",
+        "type": "drop_down",
+        "value": "post educativo"
+      }
+    ]
+  }
+}

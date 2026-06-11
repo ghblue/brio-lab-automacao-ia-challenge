@@ -1,0 +1,47 @@
+{
+  "event": "taskStatusUpdated",
+  "source": "clickup_simulado",
+  "task": {
+    "id": "BRIO-POST-002",
+    "name": "Post Instagram - Cuidados apos procedimento",
+    "description": "Publicacao informativa para orientar pacientes sobre cuidados simples depois de um procedimento odontologico estetico.",
+    "status": {
+      "status": "em revisao",
+      "color": "#f7b731",
+      "type": "custom"
+    },
+    "url": "https://app.clickup.com/t/BRIO-POST-002",
+    "creator": {
+      "id": 101,
+      "username": "Mariana Silva",
+      "email": "mariana.silva@example.com"
+    },
+    "assignees": [
+      {
+        "id": 202,
+        "username": "Lucas Andrade",
+        "email": "lucas.andrade@example.com"
+      }
+    ],
+    "custom_fields": [
+      {
+        "id": "cf_legenda",
+        "name": "legenda",
+        "type": "text",
+        "value": "Depois de um procedimento estetico, pequenos cuidados fazem diferenca no conforto e na durabilidade do resultado. Evitar alimentos muito pigmentados, manter a higiene em dia e seguir as orientacoes do profissional ajudam a preservar o sorriso com seguranca."
+      },
+      {
+        "id": "cf_data_postagem",
+        "name": "data_postagem",
+        "type": "date",
+        "value": "2026-06-20"
+      },
+      {
+        "id": "cf_tipo_conteudo",
+        "name": "tipo_conteudo",
+        "type": "drop_down",
+        "value": "post educativo"
+      }
+    ]
+  }
+}
