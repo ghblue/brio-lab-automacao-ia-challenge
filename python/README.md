@@ -154,6 +154,12 @@ A tabela criada se chama `diagnostic_leads` e possui os campos:
 
 O arquivo `data/leads.db` e um banco local gerado pela execucao e nao deve ser versionado. A pasta `data/` mantem apenas `data/.gitkeep` no Git.
 
+Para inspecionar os registros criados localmente, a partir da pasta `python/`:
+
+```bash
+sqlite3 -header -column data/leads.db "SELECT id, nome, status, clickup_task_id, error_message, created_at FROM diagnostic_leads;"
+```
+
 ## Variaveis de ambiente
 
 O projeto nao carrega `.env` automaticamente para evitar dependencias externas. Nao e necessario criar arquivo `.env` para rodar localmente.
