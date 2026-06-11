@@ -54,12 +54,13 @@ def create_clickup_task(lead: Mapping[str, Any]) -> str:
     payload = build_clickup_task_payload(lead)
 
     if CLICKUP_SIMULATION_MODE:
-        print("\nPayload ClickUp simulado:")
+        print("Modo: simulado")
         if CLICKUP_LIST_ID:
             print(f"Lista ClickUp destino: {CLICKUP_LIST_ID}")
         else:
             print("Lista ClickUp destino: nao configurada no ambiente")
 
+        print("Payload ClickUp simulado:")
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return f"simulated-clickup-task-{lead['id']}"
 
