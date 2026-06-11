@@ -1,4 +1,425 @@
 {
-  "status": "placeholder",
-  "message": "Este arquivo sera substituido pelo JSON exportado do workflow N8N apos a montagem do fluxo."
+  "name": "Brio Lab - ClickUp aprovado para hashtags",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clickup-task-approved",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "93880fe7-5509-4389-a571-dd3746bde8dc",
+      "name": "Webhook",
+      "webhookId": "8071a40e-a47d-4724-b99f-91c77e122d4f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d87e550c-3407-417c-b40d-8128a2d1ae48",
+              "leftValue": "={{ ($json.body?.task?.status?.status || $json.task?.status?.status || $json.status?.status || $json.status || '').toLowerCase() }}",
+              "rightValue": "aprovado",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c5dcad07-de34-439a-83f6-5f11764dcb46",
+      "name": "Verificar status aprovado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": true,\n  \"processed\": false,\n  \"reason\": \"Tarefa ignorada porque o status não é aprovado.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        96
+      ],
+      "id": "63aaf967-2681-478e-829f-55449f960732",
+      "name": "Responder tarefa ignorada"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json.body || $json;\nconst task = payload.task || payload;\n\nfunction getStatus(task) {\n  if (typeof task.status === 'string') {\n    return task.status;\n  }\n\n  if (task.status?.status) {\n    return task.status.status;\n  }\n\n  return null;\n}\n\nfunction getCustomField(task, fieldName) {\n  const fields = task.custom_fields || [];\n\n  const field = fields.find((item) => {\n    const name = item.name || item.field_name || '';\n    return name.toLowerCase() === fieldName.toLowerCase();\n  });\n\n  return field?.value ?? null;\n}\n\nconst extractedData = {\n  task_id: task.id,\n  task_name: task.name,\n  description: task.description,\n  status: getStatus(task),\n  task_url: task.url,\n  caption: getCustomField(task, 'legenda'),\n  post_date: getCustomField(task, 'data_postagem'),\n  content_type: getCustomField(task, 'tipo_conteudo'),\n};\n\nreturn [\n  {\n    json: {\n      ok: true,\n      processed: true,\n      message: 'Payload aprovado recebido e dados extraídos com sucesso.',\n      data: extractedData,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -80
+      ],
+      "id": "aa7df85d-8f2e-4b05-9bf2-d046be6b0749",
+      "name": "Extrair dados da tarefa"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1488,
+        -80
+      ],
+      "id": "00f0652c-12ea-4643-9701-d3422c38a96c",
+      "name": "Responder tarefa aprovada"
+    },
+    {
+      "parameters": {
+        "jsCode": "const current = $json;\nconst data = current.data || current;\n\nconst caption = data.caption || '';\n\nconst simulatedPrompt = `\nCom base na legenda abaixo, gere sugestões de hashtags para Instagram.\nSepare as hashtags em amplas, nichadas e marca/operacionais.\n\nLegenda:\n${caption}\n`;\n\nconst hashtags = {\n  amplas: [\n    '#odontologia',\n    '#saudebucal',\n    '#sorriso',\n    '#esteticaDental'\n  ],\n  nichadas: [\n    '#clareamentoDental',\n    '#odontologiaEstetica',\n    '#lentesDeContatoDental',\n    '#sorrisoNatural'\n  ],\n  operacionais: [\n    '#conteudoEducativo',\n    '#postInstagram',\n    '#brioLab'\n  ]\n};\n\nreturn [\n  {\n    json: {\n      ok: true,\n      processed: true,\n      message: 'Payload aprovado processado e hashtags geradas com IA simulada.',\n      data: {\n        ...data,\n        ai: {\n          provider: 'simulado',\n          model: 'mock-instagram-hashtags',\n          prompt: simulatedPrompt.trim(),\n          hashtags,\n          hashtags_flat: [\n            ...hashtags.amplas,\n            ...hashtags.nichadas,\n            ...hashtags.operacionais\n          ]\n        }\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -80
+      ],
+      "id": "450169aa-5483-4210-a7cd-b3f7e2f202cc",
+      "name": "Gerar hashtags com IA simulada"
+    },
+    {
+      "parameters": {
+        "jsCode": "const current = $json;\nconst data = current.data || current;\n\nconst storageRecord = {\n  task_id: data.task_id,\n  task_name: data.task_name,\n  task_url: data.task_url,\n  caption: data.caption,\n  post_date: data.post_date,\n  content_type: data.content_type,\n  ai_provider: data.ai?.provider || 'simulado',\n  hashtags: data.ai?.hashtags_flat || [],\n  hashtags_amplas: data.ai?.hashtags?.amplas || [],\n  hashtags_nichadas: data.ai?.hashtags?.nichadas || [],\n  hashtags_operacionais: data.ai?.hashtags?.operacionais || [],\n  processed_status: 'ready_to_persist',\n  created_at: new Date().toISOString()\n};\n\nreturn [\n  {\n    json: {\n      ...current,\n      data: {\n        ...data,\n        storage: storageRecord\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -80
+      ],
+      "id": "09e23648-5cd4-41ac-a1a8-d549ca32ef65",
+      "name": "Preparar registro para salvar"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cCMSnoVnXZstXJeCGDckLmje0MfqTTeFfIV-uZE5hAg/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "page1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ $json.data.storage.task_id }}",
+            "task_name": "={{ $json.data.storage.task_name }}",
+            "task_url": "={{ $json.data.storage.task_url }}",
+            "caption": "={{ $json.data.storage.caption }}",
+            "post_date": "={{ $json.data.storage.post_date }}",
+            "content_type": "={{ $json.data.storage.content_type }}",
+            "ai_provider": "={{ $json.data.storage.ai_provider }}",
+            "hashtags": "={{ $json.data.storage.hashtags.join(', ') }}",
+            "hashtags_amplas": "={{ $json.data.storage.hashtags_amplas.join(', ') }}",
+            "hashtags_nichadas": "={{ $json.data.storage.hashtags_nichadas.join(', ') }}",
+            "hashtags_operacionais": "={{ $json.data.storage.hashtags_operacionais.join(', ') }}",
+            "processed_status": "={{ $json.data.storage.processed_status }}",
+            "created_at": "={{ $json.data.storage.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "task_name",
+              "displayName": "task_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "task_url",
+              "displayName": "task_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "caption",
+              "displayName": "caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_date",
+              "displayName": "post_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "content_type",
+              "displayName": "content_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ai_provider",
+              "displayName": "ai_provider",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashtags_amplas",
+              "displayName": "hashtags_amplas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashtags_nichadas",
+              "displayName": "hashtags_nichadas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashtags_operacionais",
+              "displayName": "hashtags_operacionais",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processed_status",
+              "displayName": "processed_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1056,
+        -80
+      ],
+      "id": "8c34ac65-5582-45dc-a02c-11ee7592b1c7",
+      "name": "Salvar no Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "H7BJSHJBjWGxLMjq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://webhook.site/3636a6ce-e14d-4664-84d0-e57d06e79fae",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"event\": \"hashtags_generated\",\n  \"message\": \"Post aprovado processado com sucesso.\",\n  \"task_id\": \"{{ $('Preparar registro para salvar').item.json.data.storage.task_id }}\",\n  \"task_name\": \"{{ $('Preparar registro para salvar').item.json.data.storage.task_name }}\",\n  \"post_date\": \"{{ $('Preparar registro para salvar').item.json.data.storage.post_date }}\",\n  \"content_type\": \"{{ $('Preparar registro para salvar').item.json.data.storage.content_type }}\",\n  \"hashtags\": \"{{ $('Preparar registro para salvar').item.json.data.storage.hashtags.join(', ') }}\",\n  \"stored_in\": \"Google Sheets\",\n  \"created_at\": \"{{ $('Preparar registro para salvar').item.json.data.storage.created_at }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1264,
+        -80
+      ],
+      "id": "41658334-1f60-4d72-93d5-973df2c3065d",
+      "name": "Enviar notificação"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verificar status aprovado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar status aprovado": {
+      "main": [
+        [
+          {
+            "node": "Extrair dados da tarefa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder tarefa ignorada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair dados da tarefa": {
+      "main": [
+        [
+          {
+            "node": "Gerar hashtags com IA simulada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar hashtags com IA simulada": {
+      "main": [
+        [
+          {
+            "node": "Preparar registro para salvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar registro para salvar": {
+      "main": [
+        [
+          {
+            "node": "Salvar no Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar no Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Enviar notificação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar notificação": {
+      "main": [
+        [
+          {
+            "node": "Responder tarefa aprovada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8cd7befe-26d0-4885-b234-274e29581c1b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf397777ce670d57502a34f2e6156c397fff10dfc0e6bba629a24e2951e67717"
+  },
+  "nodeGroups": [],
+  "id": "8CNmYlpgYY26fIMv",
+  "tags": []
 }
